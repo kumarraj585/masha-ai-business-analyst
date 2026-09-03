@@ -10,83 +10,60 @@ from sklearn.metrics import (
 
 
 # ============================================================
-# 1. LOAD FULL RETAIL DATA
+# 1. LOAD DAILY SALES DATA
 # ============================================================
 
 def load_full_data():
 
-    file_path = "data/retail_raw/online_retail_II.xlsx"
+    file_path = "data/daily_sales.csv"
 
-    df1 = pd.read_excel(
-        file_path,
-        sheet_name="Year 2009-2010",
+    df = pd.read_csv(file_path)
+
+    df["Date"] = pd.to_datetime(df["Date"])
+
+    df["Revenue"] = pd.to_numeric(
+        df["Revenue"],
+        errors="coerce",
     )
 
-    df2 = pd.read_excel(
-        file_path,
-        sheet_name="Year 2010-2011",
+    df = df.dropna(
+        subset=["Date", "Revenue"]
     )
 
-    df = pd.concat(
-        [df1, df2],
-        ignore_index=True,
+    df = (
+        df
+        .sort_values("Date")
+        .reset_index(drop=True)
     )
 
     return df
 
 
 # ============================================================
-# 2. CREATE DAILY REVENUE
+# 2. CREATE DAILY REVENUE SERIES
 # ============================================================
 
 def get_daily_revenue(df):
 
-    df = df.copy()
+    data = df.copy()
 
-    # Convert date
-    df["InvoiceDate"] = pd.to_datetime(
-        df["InvoiceDate"]
+    data["Date"] = pd.to_datetime(
+        data["Date"]
     )
 
-    # Revenue = Quantity × Price
-    df["Revenue"] = (
-        df["Quantity"] * df["Price"]
-    )
-
-    # Keep valid sales
-    df = df[
-        (df["Quantity"] > 0)
-        & (df["Price"] > 0)
-    ]
-
-    # Remove cancelled invoices
-    df = df[
-        ~df["Invoice"].astype(str).str.startswith(
-            ("C", "c")
-        )
-    ]
-
-    # Convert timestamp to calendar date
-    df["Date"] = (
-        df["InvoiceDate"]
-        .dt.normalize()
-    )
-
-    # Aggregate revenue by date
     daily_revenue = (
-        df.groupby("Date")["Revenue"]
-        .sum()
+        data
+        .set_index("Date")["Revenue"]
         .sort_index()
     )
 
-    # Create complete calendar date range
+    # Make sure every calendar day exists
     full_date_range = pd.date_range(
         start=daily_revenue.index.min(),
         end=daily_revenue.index.max(),
         freq="D",
     )
 
-    # Missing dates = zero sales
     daily_revenue = (
         daily_revenue
         .reindex(
@@ -189,7 +166,7 @@ def evaluate_model(daily_revenue):
         "Rolling_14",
     ]
 
-    # Chronological train/test split
+    # Chronological split
     split_index = int(
         len(data) * 0.80
     )
@@ -208,7 +185,6 @@ def evaluate_model(daily_revenue):
     X_test = test[features]
     y_test = test["Revenue"]
 
-    # Random Forest model
     model = RandomForestRegressor(
         n_estimators=300,
         max_depth=12,
@@ -217,18 +193,15 @@ def evaluate_model(daily_revenue):
         n_jobs=-1,
     )
 
-    # Train
     model.fit(
         X_train,
         y_train,
     )
 
-    # Predict
     y_pred = model.predict(
         X_test
     )
 
-    # Metrics
     mae = mean_absolute_error(
         y_test,
         y_pred,
@@ -340,13 +313,11 @@ def forecast_next_month(
         last_historical_month + 1
     )
 
-    # First day of next month
     first_future_date = (
         next_month_period
         .to_timestamp()
     )
 
-    # Last day of next month
     last_future_date = (
         next_month_period
         .to_timestamp(
@@ -355,7 +326,6 @@ def forecast_next_month(
         .normalize()
     )
 
-    # Every date in next month
     future_dates = pd.date_range(
         start=first_future_date,
         end=last_future_date,
@@ -364,7 +334,6 @@ def forecast_next_month(
 
     predictions = []
 
-    # Recursive forecasting
     for future_date in future_dates:
 
         revenue_history = (
@@ -372,9 +341,7 @@ def forecast_next_month(
         )
 
         lag_1 = revenue_history[-1]
-
         lag_7 = revenue_history[-7]
-
         lag_14 = revenue_history[-14]
 
         rolling_7 = np.mean(
@@ -421,7 +388,6 @@ def forecast_next_month(
             future_features[features]
         )[0]
 
-        # Prevent negative revenue
         prediction = max(
             0,
             float(prediction)
@@ -434,7 +400,6 @@ def forecast_next_month(
             }
         )
 
-        # Add prediction to history
         history.loc[
             future_date
         ] = prediction
@@ -457,7 +422,7 @@ def forecast_next_month(
 
 
 # ============================================================
-# 7. MAIN PROGRAM
+# 7. COMMAND-LINE TEST
 # ============================================================
 
 def main():
@@ -466,39 +431,23 @@ def main():
     print("MASHA DAILY SALES FORECAST")
     print("========================================")
 
-    # Load full dataset
     df = load_full_data()
 
-    print("\nFull dataset shape:")
-    print(df.shape)
+    print("\nDaily sales rows:")
+    print(len(df))
 
-    # Create daily revenue
     daily_revenue = get_daily_revenue(
         df
     )
 
-    print("\n========================================")
-    print("DAILY SALES DATA")
-    print("========================================")
+    print("\nFirst date:")
+    print(daily_revenue.index.min())
 
-    print(
-        "First date:",
-        daily_revenue.index.min()
-    )
+    print("\nLast date:")
+    print(daily_revenue.index.max())
 
-    print(
-        "Last date:",
-        daily_revenue.index.max()
-    )
-
-    print(
-        "Number of calendar days:",
-        len(daily_revenue)
-    )
-
-    # Evaluate model
     (
-        model,
+        _,
         mae,
         rmse,
         r2,
@@ -507,7 +456,7 @@ def main():
     )
 
     print("\n========================================")
-    print("RANDOM FOREST MODEL EVALUATION")
+    print("MODEL EVALUATION")
     print("========================================")
 
     print(
@@ -522,7 +471,6 @@ def main():
         f"R² Score: {r2:.2f}"
     )
 
-    # Forecast next month
     (
         forecast_df,
         month,
@@ -536,8 +484,7 @@ def main():
     print("========================================")
 
     print(
-        "Month:",
-        month
+        f"Month: {month}"
     )
 
     print(
@@ -546,22 +493,10 @@ def main():
     )
 
     print(
-        "\nNumber of forecast days:",
-        len(forecast_df)
+        f"Forecast days: "
+        f"{len(forecast_df)}"
     )
 
-    print("\nDaily forecast:")
-
-    print(
-        forecast_df.to_string(
-            index=False
-        )
-    )
-
-
-# ============================================================
-# RUN MAIN ONLY WHEN EXECUTED DIRECTLY
-# ============================================================
 
 if __name__ == "__main__":
     main()
