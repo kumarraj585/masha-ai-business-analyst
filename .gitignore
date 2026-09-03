@@ -1,0 +1,40 @@
+# Python-generated files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Build files
+build/
+dist/
+wheels/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# Large raw dataset
+data/retail_raw/
+
+# Generated vector database
+data/chroma_db/
+
+# Development/archive files
+archive/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Downloaded dataset archives
+data/*.zip

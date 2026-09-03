@@ -1,0 +1,101 @@
+ONLINE RETAIL II - DATASET GUIDE
+
+Source:
+UCI Machine Learning Repository
+
+Dataset:
+Online Retail II
+
+Dataset ID:
+502
+
+
+ABOUT THE DATASET
+
+Online Retail II is a real online retail transaction dataset covering
+approximately two years of transactions.
+
+The dataset contains transactions from a UK-based, registered,
+non-store online retailer that mainly sells unique all-occasion
+gift-ware. Many customers are wholesalers.
+
+
+DATASET SIZE
+
+The original dataset contains 1,067,371 transactions.
+
+
+IMPORTANT COLUMNS
+
+Invoice:
+Invoice number assigned to each transaction.
+An invoice code beginning with the letter C indicates a cancellation.
+
+StockCode:
+Product or item code.
+
+Description:
+Product or item name.
+
+Quantity:
+Number of units of a product in a transaction.
+
+InvoiceDate:
+Date and time when the transaction was generated.
+
+Price:
+Price of one unit of the product, expressed in British pounds (GBP).
+
+Customer ID:
+Customer number identifying the customer.
+
+Country:
+Country where the customer resides.
+
+
+PROJECT BUSINESS DEFINITIONS
+
+Revenue:
+Revenue is calculated in this project as:
+
+Revenue = Quantity × Price
+
+
+Average Order Value:
+Average Order Value is calculated as:
+
+AOV = Total Revenue ÷ Number of Unique Invoices
+
+
+CUSTOMER ANALYSIS
+
+Customer-level analysis is performed only for transactions where
+Customer ID is available.
+
+
+FORECASTING
+
+Sales forecasting is an estimate based on historical sales patterns.
+Forecast values should be treated as predictions, not guaranteed results.
+
+
+CURRENCY
+
+The retail transaction prices are expressed in British pounds (GBP).
+
+
+PROJECT PURPOSE
+
+This document provides background information about the retail dataset
+for the AI Data Analyst and RAG system.
+
+The RAG system can use this information when users ask questions
+about the dataset, columns, business definitions, currency, or
+forecasting terminology.
+
+
+SOURCE
+
+UCI Machine Learning Repository
+Online Retail II
+https://archive.ics.uci.edu/dataset/502/online+retail+ii
